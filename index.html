@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mes dépenses</title>
+<style>
+:root{--bg:#f1f5f2;--card:#fff;--ink:#12231e;--mute:#5d6e68;--line:#d9e2dd;--acc:#0f6b5c;--on:#fff;--sun:#e8a317;--bad:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0d1714;--card:#16251f;--ink:#e9f1ed;--mute:#9bb0a8;--line:#27392f;--acc:#38b79f;--on:#05241d;--sun:#f0b84a;--bad:#ff8a80}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d1714;--card:#16251f;--ink:#e9f1ed;--mute:#9bb0a8;--line:#27392f;--acc:#38b79f;--on:#05241d;--sun:#f0b84a;--bad:#ff8a80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+h1{font-size:22px;margin:0}
+select,input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+#mic{display:block;margin:6px auto 8px;width:112px;height:112px;border-radius:50%;border:0;background:var(--acc);color:var(--on);font-size:44px;cursor:pointer;box-shadow:0 0 0 8px color-mix(in srgb,var(--acc) 18%,transparent)}
+#mic.on{background:var(--sun);animation:p 1s infinite}
+@keyframes p{50%{box-shadow:0 0 0 18px color-mix(in srgb,var(--sun) 22%,transparent)}}
+@media (prefers-reduced-motion:reduce){#mic.on{animation:none}}
+#hint,#heard{text-align:center;color:var(--mute);margin:4px 0;font-size:14px}
+.row{display:flex;gap:8px;margin-top:10px}
+.row input:first-child{flex:1}.row input:nth-child(2){width:110px}
+.btn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:10px;background:var(--acc);color:var(--on);font:600 16px inherit;cursor:pointer}
+.tabs{display:flex;gap:6px;margin:4px 0 12px}
+.tabs button{flex:1;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--acc);color:var(--on);border-color:var(--acc);font-weight:600}
+.big{font-size:30px;font-weight:700;margin:0}
+.sub{color:var(--mute);font-size:14px;margin:0}
+ul{list-style:none;margin:8px 0 0;padding:0}
+li{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}
+li span{flex:1;overflow-wrap:anywhere}
+li button{border:0;background:none;color:var(--bad);font-size:22px;cursor:pointer;padding:0 6px}
+.empty{color:var(--mute);display:block}
+.bars{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:10px}
+.bars div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;color:var(--mute)}
+.bars i{display:block;width:100%;background:var(--acc);border-radius:5px 5px 0 0;min-height:2px}
+.it{padding:8px 0;border-top:1px solid var(--line)}
+.it .l{display:flex;justify-content:space-between;gap:8px}
+.it .l span{overflow-wrap:anywhere}
+.meter{height:7px;background:var(--line);border-radius:4px;margin-top:5px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--sun)}
+[hidden]{display:none!important}
+</style><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0f6b5c"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"></head>
+<body><main>
+<header><h1>Mes dépenses</h1>
+<select id="lang" aria-label="Langue de dictée"><option value="fr-FR">Français</option><option value="ar-DZ">العربية</option></select></header>
+
+<section class="card">
+<button id="mic" aria-label="Dicter une dépense">🎤</button>
+<p id="hint">Appuyez et dites par exemple « pain 40 dinars ».</p>
+<p id="heard"></p>
+<div class="row"><input id="name" placeholder="Article" dir="auto"><input id="amt" type="number" inputmode="decimal" placeholder="Prix DA"></div>
+<button class="btn" id="add">Enregistrer</button>
+</section>
+
+<div class="tabs" role="tablist"><button role="tab" aria-selected="true" id="t1">Aujourd’hui</button><button role="tab" aria-selected="false" id="t2">Tableau de bord</button></div>
+
+<section id="p1" class="card">
+<p class="sub">Total du jour</p><p class="big" id="tot">0 DA</p>
+<ul id="list"></ul>
+</section>
+
+<section id="p2" hidden>
+<div class="card"><select id="per"><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="all">Tout</option></select>
+<p class="sub" style="margin-top:12px">Total de la période</p><p class="big" id="stot">0 DA</p>
+<p class="sub" id="savg"></p></div>
+<div class="card"><p class="sub">Les 7 derniers jours</p><div class="bars" id="bars"></div></div>
+<div class="card"><p class="sub">Dépenses par article</p><div id="items"></div></div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let data=[];try{data=JSON.parse(localStorage.getItem('dep')||'[]')}catch(e){}
+const save=()=>{try{localStorage.setItem('dep',JSON.stringify(data))}catch(e){}};
+const fmt=n=>Math.round(n).toLocaleString('fr-FR')+' DA';
+const dk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const sum=a=>a.reduce((s,x)=>s+x.a,0);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stop=new Set('da dzd dinar dinars dh à pour de du des le la les un une d’ l’ j’ai acheté achete payé دينار دج'.split(' '));
+
+function parse(t){
+  t=t.replace(/[٠-٩]/g,c=>c.charCodeAt(0)-1632).replace(/(\d)[\s\u202f\u00a0](?=\d{3}\b)/g,'$1');
+  const m=t.match(/\d+([.,]\d+)?/);
+  const amount=m?parseFloat(m[0].replace(',','.')):0;
+  const name=t.replace(m?m[0]:'',' ').split(/\s+/).filter(w=>w&&!stop.has(w.toLowerCase())).join(' ');
+  return {name,amount};
+}
+function fill(text){
+  const p=parse(text);
+  $('#name').value=p.name;$('#amt').value=p.amount||'';
+  $('#heard').textContent='« '+text+' »';
+  $('#hint').textContent=p.amount&&p.name?'Vérifiez, puis enregistrez.':'Complétez le champ manquant, puis enregistrez.';
+}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec,on=false;
+$('#mic').onclick=()=>{
+  if(!SR){$('#hint').textContent='Dictée non disponible ici : tapez, ou utilisez le micro du clavier.';$('#name').focus();return}
+  if(on){rec.stop();return}
+  rec=new SR();rec.lang=$('#lang').value;rec.interimResults=false;
+  rec.onstart=()=>{on=true;$('#mic').classList.add('on');$('#hint').textContent='Je vous écoute…'};
+  rec.onend=()=>{on=false;$('#mic').classList.remove('on')};
+  rec.onerror=e=>{$('#hint').textContent='Micro indisponible ('+e.error+'). Autorisez le micro ou tapez.'};
+  rec.onresult=e=>fill(e.results[0][0].transcript);
+  try{rec.start()}catch(e){}
+};
+$('#add').onclick=()=>{
+  const n=$('#name').value.trim(),a=parseFloat($('#amt').value);
+  if(!n||!(a>0)){$('#hint').textContent='Indiquez l’article et un prix supérieur à 0.';return}
+  data.push({id:Date.now(),n,a,d:dk(new Date())});save();
+  $('#name').value='';$('#amt').value='';$('#heard').textContent='';
+  $('#hint').textContent='Enregistré : '+n+', '+fmt(a)+'.';render();
+};
+$('#list').onclick=e=>{const id=e.target.dataset.id;if(id){data=data.filter(x=>x.id!=id);save();render()}};
+function tab(i){
+  $('#p1').hidden=i!=1;$('#p2').hidden=i!=2;
+  $('#t1').setAttribute('aria-selected',i==1);$('#t2').setAttribute('aria-selected',i==2);
+}
+$('#t1').onclick=()=>tab(1);$('#t2').onclick=()=>tab(2);$('#per').onchange=stats;
+
+function render(){
+  const td=data.filter(x=>x.d==dk(new Date()));
+  $('#tot').textContent=fmt(sum(td));
+  $('#list').innerHTML=td.length?td.slice().reverse().map(x=>`<li><span dir="auto">${esc(x.n)}</span><b>${fmt(x.a)}</b><button data-id="${x.id}" aria-label="Supprimer">×</button></li>`).join(''):'<li class="empty">Rien aujourd’hui pour le moment.</li>';
+  stats();
+}
+function stats(){
+  const p=$('#per').value,now=new Date();
+  let rows=data,days;
+  if(p=='all'){days=new Set(data.map(x=>x.d)).size||1}
+  else{days=+p;const c=new Date(now);c.setDate(c.getDate()-days+1);const k=dk(c);rows=data.filter(x=>x.d>=k)}
+  const tot=sum(rows);
+  $('#stot').textContent=fmt(tot);
+  $('#savg').textContent='Moyenne : '+fmt(tot/days)+' par jour';
+  const wd=['dim','lun','mar','mer','jeu','ven','sam'],cols=[];
+  for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);cols.push({k:dk(d),l:wd[d.getDay()]})}
+  cols.forEach(c=>c.v=sum(data.filter(x=>x.d==c.k)));
+  const mx=Math.max(1,...cols.map(c=>c.v));
+  $('#bars').innerHTML=cols.map(c=>`<div title="${fmt(c.v)}"><span>${c.v?Math.round(c.v):''}</span><i style="height:${Math.round(c.v/mx*85)}%"></i><span>${c.l}</span></div>`).join('');
+  const g={};
+  rows.forEach(x=>{const k=x.n.toLowerCase();(g[k]=g[k]||{n:x.n,s:0,c:0});g[k].s+=x.a;g[k].c++});
+  const L=Object.values(g).sort((a,b)=>b.s-a.s),m2=L.length?L[0].s:1;
+  $('#items').innerHTML=L.length?L.map(i=>`<div class="it"><div class="l"><span dir="auto">${esc(i.n)} <small class="sub">×${i.c}</small></span><b>${fmt(i.s)}</b></div><div class="meter"><i style="width:${Math.round(i.s/m2*100)}%"></i></div><p class="sub">${Math.round(i.s/tot*100)} % du total · moy. ${fmt(i.s/i.c)}</p></div>`).join(''):'<p class="sub">Aucune dépense sur cette période.</p>';
+}
+render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
